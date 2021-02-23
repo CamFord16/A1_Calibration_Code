@@ -170,17 +170,18 @@ bool CameraCalibration::calibration(
     std::cout << A <<std::endl << b << std::endl;
 
     double rho = 1/sqrt(A.row(2).x * A.row(2).x + A.row(2).y*A.row(2).y+A.row(2).z*A.row(2).z);
-    double c_x = rho*rho*(dot(A.row(0),(A.row(2))));
-    double c_y = rho*rho*(dot(A.row(1),(A.row(2))));
+    cx= rho*rho*(dot(A.row(0),(A.row(2))));
+    cy = rho*rho*(dot(A.row(1),(A.row(2))));
     vec3 a1a3 = cross(A.row(0),(A.row(2)));
     vec3 a2a3 = cross(A.row(1),(A.row(2)));
+
     double mag13 = sqrt(a1a3.x*a1a3.x + a1a3.y*a1a3.y + a1a3.z*a1a3.z);
     double mag23 = sqrt(a2a3.x*a2a3.x + a2a3.y*a2a3.y + a2a3.z*a2a3.z);
-    double theta = 1/cos(-dot(a1a3,a2a3) / mag13 * mag23) ;
-    double f_x = rho*rho*mag13*sin(theta);
-    double f_y = rho*rho*mag23*sin(theta);
+    double theta = acos(-dot(a1a3,a2a3) / mag13 * mag23) ;
+    fx = rho*rho*mag13*sin(theta);
+    fy = rho*rho*mag23*sin(theta);
 
-    std::cout << "The intrinsics:\nρ: "<< rho << "\nc_x: "<< c_x << "\nc_y: "<<c_y<<"\nθ: " << theta << "\nf_x: "<< f_x << "\nf_y: " << f_y << std::endl;
+    std::cout << "The intrinsics:\nρ: "<< rho << "\nc_x: "<< cx << "\nc_y: "<<cx<<"\nθ: " << theta << "\nf_x: "<< fx << "\nf_y: " << fy << std::endl;
 
     vec3 r1 = a2a3 / mag23;
     vec3 r3 = rho*A.row(2);
@@ -191,14 +192,16 @@ bool CameraCalibration::calibration(
 
 
     mat3 K;
-    K.set_row (0, vec3(f_x,-fx*1/tan(theta), c_x));
-    K.set_row(1, vec3(0, f_y/sin(theta),c_y));
+    skew = -fx*1/tan(theta);
+    K.set_row (0, vec3(fx, skew, cx));
+    K.set_row(1, vec3(0, fy/sin(theta),cy));
     K.set_row(2, vec3(0, 0, 1));
 
 
     mat3 InvK = inverse(K);
     auto T =  InvK*rho*b;
-    std::cout << "The extrinsic:\n Rotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< T << std::endl;
+    t = T.col(0);
+    std::cout << "The extrinsic:\n Rotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
 
     return true;
     // TODO: delete the above code in you final submission (which are just examples).
