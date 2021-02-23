@@ -149,8 +149,41 @@ bool CameraCalibration::calibration(
     for (int i = 0; i <12; i++) {
         m[i][0] = V.get_column(11)[i];
     }
-    for (
     std::cout << m << std::endl;
+    mat34 M(1.0f);
+    M.set_row(0, vec4(m[0][0],m[0][1],m[0][2],m[0][3]));
+    M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
+    M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
+    std::cout << M <<std::endl;
+/*
+    // define a 3 by 4 matrix M
+    mat34 M(1.0f);  // entries on the diagonal are initialized to be 1 and others to be 0.
+    // set the first row of M
+    M.set_row(0, vec4(1,1,1,1));    // vec4 is a 4D vector.
+    // set the second column of M
+    M.set_col(1, vec4(2,2,2,2));
+    // get the '2'-th row of M
+    const vec4 b = M.row(2);
+    // get the '1'-th column of M
+    const vec3 c = M.col(1);
+    // access its element at row 2 and column 1
+    std::cout << "M(2, 1) = " << M(2, 1) << std::endl;
+    // apply transformation M on a 3D point p (p is a 3D vector)
+    vec3 p(222, 444, 333);
+    vec3 proj = M * vec4(p, 1.0f);
+    std::cout << "M * p = " << proj << std::endl;
+    // the length of a vector
+    float len = p.length();
+    // the dot product of two vectors
+    float dot_prod = dot(p, proj);
+    // the cross product of two vectors
+    vec3 cross_prod = cross(p, proj);
+
+    mat3 K; // a 3 by 3 matrix (all entries are intentionally NOT initialized for efficiency reasons)
+    // ... Here you should compute or initialize K.
+    // compute the inverse of K
+    mat3 invK = inverse(K);
+*/
 
     // Now let's check if the SVD result is correct
 
