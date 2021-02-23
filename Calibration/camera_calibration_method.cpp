@@ -155,59 +155,52 @@ bool CameraCalibration::calibration(
     M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
     M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
     std::cout << M <<std::endl;
-/*
-    // define a 3 by 4 matrix M
-    mat34 M(1.0f);  // entries on the diagonal are initialized to be 1 and others to be 0.
-    // set the first row of M
-    M.set_row(0, vec4(1,1,1,1));    // vec4 is a 4D vector.
-    // set the second column of M
-    M.set_col(1, vec4(2,2,2,2));
-    // get the '2'-th row of M
-    const vec4 b = M.row(2);
-    // get the '1'-th column of M
-    const vec3 c = M.col(1);
-    // access its element at row 2 and column 1
-    std::cout << "M(2, 1) = " << M(2, 1) << std::endl;
-    // apply transformation M on a 3D point p (p is a 3D vector)
-    vec3 p(222, 444, 333);
-    vec3 proj = M * vec4(p, 1.0f);
-    std::cout << "M * p = " << proj << std::endl;
-    // the length of a vector
-    float len = p.length();
-    // the dot product of two vectors
-    float dot_prod = dot(p, proj);
-    // the cross product of two vectors
-    vec3 cross_prod = cross(p, proj);
 
-    mat3 K; // a 3 by 3 matrix (all entries are intentionally NOT initialized for efficiency reasons)
-    // ... Here you should compute or initialize K.
-    // compute the inverse of K
-    mat3 invK = inverse(K);
-*/
+    mat3 A;
+    A.set_row(0,vec3(M.row(0)[0],M.row(0)[1],M.row(0)[2]));
+    A.set_row(1,vec3(M.row(1)[0],M.row(1)[1],M.row(1)[2]));
+    A.set_row(2,vec3(M.row(2)[0],M.row(2)[1],M.row(2)[2]));
 
-    // Now let's check if the SVD result is correct
 
-    // Check 1: U is orthogonal, so U * U^T must be identity
-    //std::cout << "U*U^T: \n" << U * transpose(U) << std::endl;
+    Mat<3,1,float> b;
+    b[0] = M.col(3)[0];
+    b[1] = M.col(3)[1];
+    b[2] = M.col(3)[2];
 
-    // Check 2: V is orthogonal, so V * V^T must be identity
-   // std::cout << "V*V^T: \n" << V * transpose(V) << std::endl;
+    std::cout << A <<std::endl << b << std::endl;
 
-    // Check 3: S must be a diagonal matrix
-    //std::cout << "S: \n" << S << std::endl;
+    double rho = 1/sqrt(A.row(2).x * A.row(2).x + A.row(2).y*A.row(2).y+A.row(2).z*A.row(2).z);
+    double c_x = rho*rho*(dot(A.row(0),(A.row(2))));
+    double c_y = rho*rho*(dot(A.row(1),(A.row(2))));
+    vec3 a1a3 = cross(A.row(0),(A.row(2)));
+    vec3 a2a3 = cross(A.row(1),(A.row(2)));
+    double mag13 = sqrt(a1a3.x*a1a3.x + a1a3.y*a1a3.y + a1a3.z*a1a3.z);
+    double mag23 = sqrt(a2a3.x*a2a3.x + a2a3.y*a2a3.y + a2a3.z*a2a3.z);
+    double theta = 1/cos(-dot(a1a3,a2a3) / mag13 * mag23) ;
+    double f_x = rho*rho*mag13*sin(theta);
+    double f_y = rho*rho*mag23*sin(theta);
 
-    // Check 4: according to the definition, A = U * S * V^T
-    //std::cout << "M - U * S * V^T: \n" << P - U * S * transpose(V) << std::endl;
+    std::cout << "The intrinsics:\nρ: "<< rho << "\nc_x: "<< c_x << "\nc_y: "<<c_y<<"\nθ: " << theta << "\nf_x: "<< f_x << "\nf_y: " << f_y << std::endl;
 
-    // Define a 5 by 5 square matrix and compute its inverse.
-    Matrix<double> B(5, 5, array.data());    // Here I use part of the above array to initialize B
-    // Compute its inverse
-    Matrix<double> invB(5, 5);
-    inverse(B, invB);
-    // Let's check if the inverse is correct
-    std::cout << "B * invB: \n" << B * invB << std::endl;
+    vec3 r1 = a2a3 / mag23;
+    vec3 r3 = rho*A.row(2);
+    vec3 r2 = cross(r3,r1);
+    R.set_row(0, r1);
+    R.set_row(1, r2);
+    R.set_row(2, r3);
 
-    return false;
+
+    mat3 K;
+    K.set_row (0, vec3(f_x,-fx*1/tan(theta), c_x));
+    K.set_row(1, vec3(0, f_y/sin(theta),c_y));
+    K.set_row(2, vec3(0, 0, 1));
+
+
+    mat3 InvK = inverse(K);
+    auto T =  InvK*rho*b;
+    std::cout << "The extrinsic:\n Rotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< T << std::endl;
+
+    return true;
     // TODO: delete the above code in you final submission (which are just examples).
 #endif
 }
