@@ -173,29 +173,32 @@ bool CameraCalibration::calibration(
         }
     }
 
+    std::cout << "Matrix P: \n"<<P<<std::endl;
 
-    //get M matrix
+    //set M matrix
     mat34 M(1.0f);
     M.set_row(0, vec4(m[0][0],m[0][1],m[0][2],m[0][3]));
     M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
     M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
     //std::cout << M <<std::endl;
-    //get M matrix
+    std::cout<<"Matrix M: \n"<< "size: "<<M.num_rows() <<" by "<< M.num_columns()<<"\n"<<M <<std::endl;
+    //set M matrix
 
-    //set A matrix from M
+
+    //get A matrix from M
     mat3 A;
     A.set_row(0,vec3(M.row(0)[0],M.row(0)[1],M.row(0)[2]));
     A.set_row(1,vec3(M.row(1)[0],M.row(1)[1],M.row(1)[2]));
     A.set_row(2,vec3(M.row(2)[0],M.row(2)[1],M.row(2)[2]));
-    //set A matrix from M
+    //get A matrix from M
 
 
-    //set b matrix from M
+    //get b matrix from M
     Mat<3,1,float> b;
     b[0] = M.col(3)[0];
     b[1] = M.col(3)[1];
     b[2] = M.col(3)[2];
-    //set b matrix from M
+    //get b matrix from M
 
     //extract intrinsic parameters from M =[A,b]
     double rho = 1/sqrt(A.row(2).x * A.row(2).x + A.row(2).y*A.row(2).y+A.row(2).z*A.row(2).z);
@@ -209,7 +212,6 @@ bool CameraCalibration::calibration(
     double theta = acos(-dot(a1a3,a2a3) / mag13 * mag23) ;
     fx = rho*rho*mag13*sin(theta);
     fy = rho*rho*mag23*sin(theta);
-
     //extract intrinsic parameters from M =[A,b]
 
 
@@ -231,7 +233,6 @@ bool CameraCalibration::calibration(
     auto T =  InvK*rho*b;
     t = T.col(0);
 
-    std::cout<<rho<<std::endl;
     //extract extrinsic parameters from M =[A,b]
     std::cout << "The intrinsic parameters:\n" << "\ncx: "<< cx << "\ncy: "<<cy<< "\nfx: "<< fx << "\nfy: " << fy <<"\nskew: "<< skew << "\n"<<std::endl;
     std::cout << "The extrinsic parameters:\n" <<"\nRotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
