@@ -58,8 +58,12 @@ bool CameraCalibration::calibration(
     std::cout << "TODO: After implementing the calibration() function, I will disable all unrelated output ...\n\n";
 
     // TODO: check if input is valid (e.g., number of correspondences >= 6, sizes of 2D/3D points must match)
+    //if (points_3d.size() < 6 || points_2d.size() < 6) std::cout << "Input file contains invalid number of 2D/3D points.\n"; return false;
+    //for (int i = 0; i < points_3d.size(); i++) if (points_3d[i].length()!=3) std::cout << "Input file contains invalid size of 3D points.\n"; return false;
+    //for (int i = 0; i < points_2d.size(); i++) if (points_3d[i].length()!=2) std::cout << "Input file contains invalid size of 3D points.\n"; return false;
 
-    // TODO: construct the P matrix (so P * m = 0).
+
+
 
     // TODO: solve for M (the whole projection matrix, i.e., M = K * [R, t]) using SVD decomposition.
     //   Optional: you can check if your M is correct by applying M on the 3D points. If correct, the projected point
@@ -89,55 +93,117 @@ bool CameraCalibration::calibration(
                  "\tThe following are just the output of these examples. You should delete ALL unrelated code and\n"
                  "\tavoid unnecessary output in you final submission.\n\n";
 
-    // This is a 1D array of 'double' values. Alternatively, you can use 'double mat[25]' but you cannot change it
-    // length. With 'std::vector', you can do append/delete/insert elements, and much more. The 'std::vector' can store
-    // not only 'double', but also any other types of objects. In case you may want to learn more about 'std::vector'
-    // check here: https://en.cppreference.com/w/cpp/container/vector
-    std::vector<double> array = {1, 3, 3, 4, 7, 6, 2, 8, 2, 8, 3, 2, 4, 9, 1, 7, 3, 23, 2, 3, 5, 2, 1, 5, 8, 9, 22};
-    array.push_back(5); // append 5 to the array (so the size will increase by 1).
-    array.insert(array.end(), 10, 3);  // append ten 3 (so the size will grow by 10).
 
-    // To access its values
-    for (int i=0; i<array.size(); ++i)
-        std::cout << array[i] << " ";  // use 'array[i]' to access its i-th element.
-    std::cout << std::endl;
+    // TODO: construct the P matrix (so P * m = 0).
 
-    // Define an m-by-n double valued matrix.
-    // Here I use the above array to initialize it. You can also use A(i, j) to initialize/modify/access its elements.
-    const int m = 6, n = 5;
-    Matrix<double> A(m, n, array.data());    // 'array.data()' returns a pointer to the array.
-    std::cout << "M: \n" << A << std::endl;
+    std::vector<double> array = {};
 
-    Matrix<double> U(m, m, 0.0);   // initialized with 0s
-    Matrix<double> S(m, n, 0.0);   // initialized with 0s
-    Matrix<double> V(n, n, 0.0);   // initialized with 0s
+            for (int i = 0; i < points_3d.size(); i++) {
+                for (int j = 0; j < 2; j++) {
+                    if (j == 0) {
+                        array.push_back(points_3d[i].x);
+                        array.push_back(points_3d[i].y);
+                        array.push_back(points_3d[i].z);
+                        array.push_back(1);
+                        for (int k = 0; k < 4; k++) { array.push_back(0); }
+                        array.push_back(-points_2d[i].x * (points_3d[i].x));
+                        array.push_back(-points_2d[i].x * (points_3d[i].y));
+                        array.push_back(-points_2d[i].x * (points_3d[i].z));
+                        array.push_back(-points_2d[i].x);
+                    } else if (j == 1) {
+                        for (int k = 0; k < 4; k++) { array.push_back(0); }
+                            array.push_back(points_3d[i].x);
+                            array.push_back(points_3d[i].y);
+                            array.push_back(points_3d[i].z);
+                            array.push_back(1);
+                            array.push_back(-points_2d[i].y * (points_3d[i].x));
+                            array.push_back(-points_2d[i].y * (points_3d[i].y));
+                            array.push_back(-points_2d[i].y * (points_3d[i].z));
+                            array.push_back(-points_2d[i].y);
+
+                    }
+                }
+            }
+
+    const int r = 18, c = 12;
+    Matrix<double> P(r, c, array.data());    // 'array.data()' returns a pointer to the array.
+    std::cout << "P: \n" << P << std::endl;
+
+
+
+
+
+
+    Matrix<double> U(r, r, 0.0);   // initialized with 0s
+    Matrix<double> S(r, c, 0.0);   // initialized with 0s
+    Matrix<double> V(c, c, 0.0);   // initialized with 0s
+
 
     // Compute the SVD decomposition of A
-    svd_decompose(A, U, S, V);
+    svd_decompose(P, U, S, V);
 
-    // Now let's check if the SVD result is correct
+    std::cout << "V: \n" << V << std::endl;
 
-    // Check 1: U is orthogonal, so U * U^T must be identity
-    std::cout << "U*U^T: \n" << U * transpose(U) << std::endl;
+    //std::vector<double> m;
+    Matrix<double> m(12,1, 0.0);
+    for (int i = 0; i <12; i++) {
+        m[i][0] = V.get_column(11)[i];
+    }
+    std::cout << m << std::endl;
+    mat34 M(1.0f);
+    M.set_row(0, vec4(m[0][0],m[0][1],m[0][2],m[0][3]));
+    M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
+    M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
+    std::cout << M <<std::endl;
 
-    // Check 2: V is orthogonal, so V * V^T must be identity
-    std::cout << "V*V^T: \n" << V * transpose(V) << std::endl;
+    mat3 A;
+    A.set_row(0,vec3(M.row(0)[0],M.row(0)[1],M.row(0)[2]));
+    A.set_row(1,vec3(M.row(1)[0],M.row(1)[1],M.row(1)[2]));
+    A.set_row(2,vec3(M.row(2)[0],M.row(2)[1],M.row(2)[2]));
 
-    // Check 3: S must be a diagonal matrix
-    std::cout << "S: \n" << S << std::endl;
 
-    // Check 4: according to the definition, A = U * S * V^T
-    std::cout << "M - U * S * V^T: \n" << A - U * S * transpose(V) << std::endl;
+    Mat<3,1,float> b;
+    b[0] = M.col(3)[0];
+    b[1] = M.col(3)[1];
+    b[2] = M.col(3)[2];
 
-    // Define a 5 by 5 square matrix and compute its inverse.
-    Matrix<double> B(5, 5, array.data());    // Here I use part of the above array to initialize B
-    // Compute its inverse
-    Matrix<double> invB(5, 5);
-    inverse(B, invB);
-    // Let's check if the inverse is correct
-    std::cout << "B * invB: \n" << B * invB << std::endl;
+    std::cout << A <<std::endl << b << std::endl;
 
-    return false;
+    double rho = 1/sqrt(A.row(2).x * A.row(2).x + A.row(2).y*A.row(2).y+A.row(2).z*A.row(2).z);
+    cx= rho*rho*(dot(A.row(0),(A.row(2))));
+    cy = rho*rho*(dot(A.row(1),(A.row(2))));
+    vec3 a1a3 = cross(A.row(0),(A.row(2)));
+    vec3 a2a3 = cross(A.row(1),(A.row(2)));
+
+    double mag13 = sqrt(a1a3.x*a1a3.x + a1a3.y*a1a3.y + a1a3.z*a1a3.z);
+    double mag23 = sqrt(a2a3.x*a2a3.x + a2a3.y*a2a3.y + a2a3.z*a2a3.z);
+    double theta = acos(-dot(a1a3,a2a3) / mag13 * mag23) ;
+    fx = rho*rho*mag13*sin(theta);
+    fy = rho*rho*mag23*sin(theta);
+
+    std::cout << "The intrinsics:\nρ: "<< rho << "\nc_x: "<< cx << "\nc_y: "<<cx<<"\nθ: " << theta << "\nf_x: "<< fx << "\nf_y: " << fy << std::endl;
+
+    vec3 r1 = a2a3 / mag23;
+    vec3 r3 = rho*A.row(2);
+    vec3 r2 = cross(r3,r1);
+    R.set_row(0, r1);
+    R.set_row(1, r2);
+    R.set_row(2, r3);
+
+
+    mat3 K;
+    skew = -fx*1/tan(theta);
+    K.set_row (0, vec3(fx, skew, cx));
+    K.set_row(1, vec3(0, fy/sin(theta),cy));
+    K.set_row(2, vec3(0, 0, 1));
+
+
+    mat3 InvK = inverse(K);
+    auto T =  InvK*rho*b;
+    t = T.col(0);
+    std::cout << "The extrinsic:\n Rotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
+
+    return true;
     // TODO: delete the above code in you final submission (which are just examples).
 #endif
 }
