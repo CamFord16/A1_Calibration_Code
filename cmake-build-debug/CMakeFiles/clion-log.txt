@@ -1,0 +1,7 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/Users/cameraford/Documents/NL LIFE/TU Delft/Year 2/Q3/3D Vision/A1/A1_Calibration/A1_Calibration_Code"
+-- Easy3D: I'am working on a 64-bit Darwin
+-- OpenGL libraries: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework
+-- Using Cocoa for window creation
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/cameraford/Documents/NL LIFE/TU Delft/Year 2/Q3/3D Vision/A1/A1_Calibration/A1_Calibration_Code/cmake-build-debug
