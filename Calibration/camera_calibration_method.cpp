@@ -166,7 +166,7 @@ bool CameraCalibration::calibration(
     for (int i =0; i < Czero.rows(); i++){
         for (int j = 0; j < Czero.cols(); j++){
             if (abs(Czero[i][j])>0.001){
-                std::cout<<"Invalid P (or m) as elements of their products may be far from zero: not satisfying P*m=0 (camera_calibration_method.cpp-line169)"<<std::endl;
+                std::cout<<"Invalid P (or m) as elements of their product may be far further from zero: not satisfying P*m=0 (camera_calibration_method.cpp-line169)"<<std::endl;
                 std::cout<<P*m;
                 return false;
             }
