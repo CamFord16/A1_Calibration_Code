@@ -53,8 +53,8 @@ bool CameraCalibration::calibration(
         vec3& t)
 {
     std::cout << std::endl;
-    std::cout << "I am going to implement the calibration() function in the following file:" << std::endl
-              << "\t" << __FILE__ << std::endl;
+    std::cout << "WE going to implement the calibration() function in the following file:" << std::endl
+              << "\t" << __FILE__ <<"\n\n\n"<< std::endl;
 
     // check if input is valid (e.g., number of correspondences >= 6, sizes of 2D/3D points must match)
     if (points_3d.size() < 6 || points_2d.size() < 6) {std::cout << "Input file contains invalid number (<6) of 2D/3D points.\n"; return false;}
