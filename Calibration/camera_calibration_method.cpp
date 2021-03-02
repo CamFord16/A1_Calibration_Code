@@ -31,8 +31,6 @@ using namespace easy3d;
 
 
 /**
- * TODO: Finish this function for calibrating a camera from the corresponding 3D-2D point pairs.
- *       You may define a few functions for some sub-tasks.
  *
  * @param points_3d   An array of 3D points.
  * @param points_2d   An array of 2D points.
@@ -104,7 +102,7 @@ bool CameraCalibration::calibration(
                 }
             }
 
-    const int r = 18, c = 12;
+    int r = 18, c = 12;
     Matrix<double> P(r, c, array.data());
     //std::cout << "P: \n" << P << std::endl;
 
@@ -115,8 +113,46 @@ bool CameraCalibration::calibration(
 
 
     svd_decompose(P, U, S, V);
-    // Compute the SVD decomposition of A
+    // Compute the SVD decomposition of P
 
+
+    //Intermediate validation checks~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //Check validity of V
+    Matrix<double> I(V.cols(),V.rows(), 0.0);
+    I.load_identity(1);
+    auto VVt=V*transpose(V);
+    for (int i = 0; i < VVt.cols(); i++)
+        for (int j = 0; j < VVt.rows(); j++)
+            if (VVt[i][j] - I[i][j] > 0.00000001) {
+                std::cout << "Invalid decomposition result of V: V*VT must give Identity Matrix" << std::endl;
+                std::cout << VVt << I;
+                return false;
+            }
+
+
+    //Check Validity of U
+    I.resize(U.rows(),U.cols()); //adjust Matrix to U's size
+            I.load_zero(); //reset Matrix
+            I.load_identity(1); //Build Identity Matrix
+    auto UUt=U*transpose(U);
+    for (int i = 0; i < UUt.cols(); i++)
+        for (int j = 0; j < UUt.rows(); j++)
+            if (UUt[i][j] - I[i][j] > 0.00000001) {
+                std::cout << "Invalid decomposition result of U: U*UT must give Identity Matrix" << std::endl;
+                std::cout << UUt << I;
+                return false;
+            }
+
+    //Check Validity of S
+    for (int i = 0; i < S.cols(); i++)
+        for (int j = 0; j < S.rows(); j++)
+            if ((i != j) && (S[i][j]-S[i][j] > 0.00000001)) {
+
+                std::cout << "Invalid decomposition result of S: S must be Diagonal Matrix" << std::endl;
+                std::cout<<S;
+                return false;
+            }
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     //get m matrix
     Matrix<double> m(12,1, 0.0);
@@ -125,13 +161,14 @@ bool CameraCalibration::calibration(
     }
     //get m matrix
 
+
     //get M matrix
     mat34 M(1.0f);
     M.set_row(0, vec4(m[0][0],m[0][1],m[0][2],m[0][3]));
     M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
     M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
     //std::cout << M <<std::endl;
-    //get m matrix
+    //get M matrix
 
     //set A matrix from M
     mat3 A;
