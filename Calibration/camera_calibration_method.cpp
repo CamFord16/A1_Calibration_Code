@@ -106,7 +106,7 @@ bool CameraCalibration::calibration(
     Matrix<double> P(r, c, array.data());
     //std::cout << "P: \n" << P << std::endl;
 
-    // Compute the SVD decomposition of A
+    // Compute the SVD decomposition of P
     Matrix<double> U(r, r, 0.0);   // initialized with 0s
     Matrix<double> S(r, c, 0.0);   // initialized with 0s
     Matrix<double> V(c, c, 0.0);   // initialized with 0s
@@ -124,7 +124,7 @@ bool CameraCalibration::calibration(
     for (int i = 0; i < VVt.cols(); i++)
         for (int j = 0; j < VVt.rows(); j++)
             if (VVt[i][j] - I[i][j] > 0.00000001) {
-                std::cout << "Invalid decomposition result of V: V*VT must give Identity Matrix" << std::endl;
+                std::cout << "Invalid decomposition result of V: V*VT must give Identity Matrix (camera_calibration_method.cpp-line127)" << std::endl;
                 std::cout << VVt << I;
                 return false;
             }
@@ -138,7 +138,7 @@ bool CameraCalibration::calibration(
     for (int i = 0; i < UUt.cols(); i++)
         for (int j = 0; j < UUt.rows(); j++)
             if (UUt[i][j] - I[i][j] > 0.00000001) {
-                std::cout << "Invalid decomposition result of U: U*UT must give Identity Matrix" << std::endl;
+                std::cout << "Invalid decomposition result of U: U*UT must give Identity Matrix (camera_calibration_method.cpp-line141)" << std::endl;
                 std::cout << UUt << I;
                 return false;
             }
@@ -148,7 +148,7 @@ bool CameraCalibration::calibration(
         for (int j = 0; j < S.rows(); j++)
             if ((i != j) && (S[i][j]-S[i][j] > 0.00000001)) {
 
-                std::cout << "Invalid decomposition result of S: S must be Diagonal Matrix" << std::endl;
+                std::cout << "Invalid decomposition result of S: S must be Diagonal Matrix (camera_calibration_method.cpp-line151)" << std::endl;
                 std::cout<<S;
                 return false;
             }
@@ -160,6 +160,18 @@ bool CameraCalibration::calibration(
         m[i][0] = V.get_column(11)[i];
     }
     //get m matrix
+
+    //Check Validity of P and m with the equation P*m = 0
+    auto Czero=P*m;
+    for (int i =0; i < Czero.rows(); i++){
+        for (int j = 0; j < Czero.cols(); j++){
+            if (abs(Czero[i][j])>0.001){
+                std::cout<<"Invalid P (or m) as elements of their products may be far from zero: not satisfying P*m=0 (camera_calibration_method.cpp-line169)"<<std::endl;
+                std::cout<<P*m;
+                return false;
+            }
+        }
+    }
 
 
     //get M matrix
@@ -219,6 +231,7 @@ bool CameraCalibration::calibration(
     auto T =  InvK*rho*b;
     t = T.col(0);
 
+    std::cout<<rho<<std::endl;
     //extract extrinsic parameters from M =[A,b]
     std::cout << "The intrinsic parameters:\n" << "\ncx: "<< cx << "\ncy: "<<cy<< "\nfx: "<< fx << "\nfy: " << fy <<"\nskew: "<< skew << "\n"<<std::endl;
     std::cout << "The extrinsic parameters:\n" <<"\nRotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
