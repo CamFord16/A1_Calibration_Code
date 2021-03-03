@@ -31,8 +31,6 @@ using namespace easy3d;
 
 
 /**
- * TODO: Finish this function for calibrating a camera from the corresponding 3D-2D point pairs.
- *       You may define a few functions for some sub-tasks.
  *
  * @param points_3d   An array of 3D points.
  * @param points_2d   An array of 2D points.
@@ -53,51 +51,31 @@ bool CameraCalibration::calibration(
         vec3& t)
 {
     std::cout << std::endl;
-    std::cout << "TODO: I am going to implement the calibration() function in the following file:" << std::endl
-              << "\t" << __FILE__ << std::endl;
-    std::cout << "TODO: After implementing the calibration() function, I will disable all unrelated output ...\n\n";
+    std::cout << "WE going to implement the calibration() function in the following file:" << std::endl
+              << "\t" << __FILE__ <<"\n\n\n"<< std::endl;
 
-    // TODO: check if input is valid (e.g., number of correspondences >= 6, sizes of 2D/3D points must match)
-    //if (points_3d.size() < 6 || points_2d.size() < 6) std::cout << "Input file contains invalid number of 2D/3D points.\n"; return false;
-    //for (int i = 0; i < points_3d.size(); i++) if (points_3d[i].length()!=3) std::cout << "Input file contains invalid size of 3D points.\n"; return false;
-    //for (int i = 0; i < points_2d.size(); i++) if (points_3d[i].length()!=2) std::cout << "Input file contains invalid size of 3D points.\n"; return false;
+    // check if input is valid (e.g., number of correspondences >= 6, sizes of 2D/3D points must match)
+    if (points_3d.size() < 6 || points_2d.size() < 6) {std::cout << "Input file contains invalid number (<6) of 2D/3D points.\n"; return false;}
+    for (int i = 0; i < points_3d.size(); i++){
+        if (points_3d[i].size() !=3){
+            std::cout << points_3d.size() << "Input file contains invalid size of 3D points.\n";
+            return false;}
+    }
+    for (int i = 0; i < points_2d.size(); i++) {
+        if (points_2d[i].size() != 2) {
+            std::cout << "Input file contains invalid size of 2D points.\n";
+            return false;
+        }
+    }
+    if (points_3d.size() != points_2d.size()) {
+        std::cout << "Input file must contain (pairs) the same number of points for 2D and 3D.\n";
+        return false;
+    }
+    // check if input is valid (e.g., number of correspondences >= 6, sizes of 2D/3D points must match)
 
-
-
-
-    // TODO: solve for M (the whole projection matrix, i.e., M = K * [R, t]) using SVD decomposition.
-    //   Optional: you can check if your M is correct by applying M on the 3D points. If correct, the projected point
-    //             should be very close to your input images points.
-
-    // TODO: extract intrinsic parameters from M.
-
-    // TODO: extract extrinsic parameters from M.
-
-    // TODO: uncomment the line below to return true when testing your algorithm and in you final submission.
-    //return false;
-
-
-
-    // TODO: The following code is just an example showing you SVD decomposition, matrix inversion, and some related.
-    // TODO: Delete the code below (or change "#if 1" in the first line to "#if 0") in you final submission.
 #if 1
-    std::cout << "[Liangliang:] Camera calibration requires computing the SVD and inverse of matrices.\n"
-                 "\tIn this assignment, I provide you with a Matrix data structure for storing matrices of arbitrary\n"
-                 "\tsizes (see matrix.h). I also wrote the example code to show you how to:\n"
-                 "\t\t- use the dynamic 1D array data structure 'std::vector' from the standard C++ library;\n"
-                 "\t\t  The points (both 3D and 2D) are stored in such arrays;\n"
-                 "\t\t- use the template matrix class (which can have an arbitrary size);\n"
-                 "\t\t- compute the SVD of a matrix;\n"
-                 "\t\t- compute the inverse of a matrix;\n"
-                 "\t\t- compute the transpose of a matrix.\n"
-                 "\tThe following are just the output of these examples. You should delete ALL unrelated code and\n"
-                 "\tavoid unnecessary output in you final submission.\n\n";
-
-
-    // TODO: construct the P matrix (so P * m = 0).
-
+    //construct the P matrix (so P * m = 0).
     std::vector<double> array = {};
-
             for (int i = 0; i < points_3d.size(); i++) {
                 for (int j = 0; j < 2; j++) {
                     if (j == 0) {
@@ -120,55 +98,109 @@ bool CameraCalibration::calibration(
                             array.push_back(-points_2d[i].y * (points_3d[i].y));
                             array.push_back(-points_2d[i].y * (points_3d[i].z));
                             array.push_back(-points_2d[i].y);
-
                     }
                 }
             }
 
-    const int r = 18, c = 12;
-    Matrix<double> P(r, c, array.data());    // 'array.data()' returns a pointer to the array.
-    std::cout << "P: \n" << P << std::endl;
+    int r = 18, c = 12;
+    Matrix<double> P(r, c, array.data());
+    //std::cout << "P: \n" << P << std::endl;
 
-
-
-
-
-
+    // Compute the SVD decomposition of P
     Matrix<double> U(r, r, 0.0);   // initialized with 0s
     Matrix<double> S(r, c, 0.0);   // initialized with 0s
     Matrix<double> V(c, c, 0.0);   // initialized with 0s
 
 
-    // Compute the SVD decomposition of A
     svd_decompose(P, U, S, V);
+    // Compute the SVD decomposition of P
 
-    std::cout << "V: \n" << V << std::endl;
 
-    //std::vector<double> m;
+    //Intermediate validation checks~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //Check validity of V
+    Matrix<double> I(V.cols(),V.rows(), 0.0);
+    I.load_identity(1);
+    auto VVt=V*transpose(V);
+    for (int i = 0; i < VVt.cols(); i++)
+        for (int j = 0; j < VVt.rows(); j++)
+            if (VVt[i][j] - I[i][j] > 0.00000001) {
+                std::cout << "Invalid decomposition result of V: V*VT must give Identity Matrix (camera_calibration_method.cpp-line127)" << std::endl;
+                std::cout << VVt << I;
+                return false;
+            }
+
+
+    //Check Validity of U
+    I.resize(U.rows(),U.cols()); //adjust Matrix to U's size
+            I.load_zero(); //reset Matrix
+            I.load_identity(1); //Build Identity Matrix
+    auto UUt=U*transpose(U);
+    for (int i = 0; i < UUt.cols(); i++)
+        for (int j = 0; j < UUt.rows(); j++)
+            if (UUt[i][j] - I[i][j] > 0.00000001) {
+                std::cout << "Invalid decomposition result of U: U*UT must give Identity Matrix (camera_calibration_method.cpp-line141)" << std::endl;
+                std::cout << UUt << I;
+                return false;
+            }
+
+    //Check Validity of S
+    for (int i = 0; i < S.cols(); i++)
+        for (int j = 0; j < S.rows(); j++)
+            if ((i != j) && (S[i][j]-S[i][j] > 0.00000001)) {
+
+                std::cout << "Invalid decomposition result of S: S must be Diagonal Matrix (camera_calibration_method.cpp-line151)" << std::endl;
+                std::cout<<S;
+                return false;
+            }
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    //get m matrix
     Matrix<double> m(12,1, 0.0);
     for (int i = 0; i <12; i++) {
         m[i][0] = V.get_column(11)[i];
     }
-    std::cout << m << std::endl;
+    //get m matrix
+
+    //Check Validity of P and m with the equation P*m = 0
+    auto Czero=P*m;
+    for (int i =0; i < Czero.rows(); i++){
+        for (int j = 0; j < Czero.cols(); j++){
+            if (abs(Czero[i][j])>0.001){
+                std::cout<<"Invalid P (or m) as elements of their product may be far further from zero: not satisfying P*m=0 (camera_calibration_method.cpp-line169)"<<std::endl;
+                std::cout<<P*m;
+                return false;
+            }
+        }
+    }
+
+    std::cout << "Matrix P: \n"<<P<<std::endl;
+
+    //set M matrix
     mat34 M(1.0f);
     M.set_row(0, vec4(m[0][0],m[0][1],m[0][2],m[0][3]));
     M.set_row(1, vec4(m[0][4],m[0][5],m[0][6],m[0][7]));
     M.set_row(2, vec4(m[0][8],m[0][9],m[0][10],m[0][11]));
-    std::cout << M <<std::endl;
+    //std::cout << M <<std::endl;
+    std::cout<<"Matrix M: \n"<< "size: "<<M.num_rows() <<" by "<< M.num_columns()<<"\n"<<M <<std::endl;
+    //set M matrix
 
+
+    //get A matrix from M
     mat3 A;
     A.set_row(0,vec3(M.row(0)[0],M.row(0)[1],M.row(0)[2]));
     A.set_row(1,vec3(M.row(1)[0],M.row(1)[1],M.row(1)[2]));
     A.set_row(2,vec3(M.row(2)[0],M.row(2)[1],M.row(2)[2]));
+    //get A matrix from M
 
 
+    //get b matrix from M
     Mat<3,1,float> b;
     b[0] = M.col(3)[0];
     b[1] = M.col(3)[1];
     b[2] = M.col(3)[2];
+    //get b matrix from M
 
-    std::cout << A <<std::endl << b << std::endl;
-
+    //extract intrinsic parameters from M =[A,b]
     double rho = 1/sqrt(A.row(2).x * A.row(2).x + A.row(2).y*A.row(2).y+A.row(2).z*A.row(2).z);
     cx= rho*rho*(dot(A.row(0),(A.row(2))));
     cy = rho*rho*(dot(A.row(1),(A.row(2))));
@@ -180,9 +212,10 @@ bool CameraCalibration::calibration(
     double theta = acos(-dot(a1a3,a2a3) / mag13 * mag23) ;
     fx = rho*rho*mag13*sin(theta);
     fy = rho*rho*mag23*sin(theta);
+    //extract intrinsic parameters from M =[A,b]
 
-    std::cout << "The intrinsics:\nρ: "<< rho << "\nc_x: "<< cx << "\nc_y: "<<cx<<"\nθ: " << theta << "\nf_x: "<< fx << "\nf_y: " << fy << std::endl;
 
+    //extract extrinsic parameters from M =[A,b]
     vec3 r1 = a2a3 / mag23;
     vec3 r3 = rho*A.row(2);
     vec3 r2 = cross(r3,r1);
@@ -190,21 +223,20 @@ bool CameraCalibration::calibration(
     R.set_row(1, r2);
     R.set_row(2, r3);
 
-
     mat3 K;
     skew = -fx*1/tan(theta);
     K.set_row (0, vec3(fx, skew, cx));
     K.set_row(1, vec3(0, fy/sin(theta),cy));
     K.set_row(2, vec3(0, 0, 1));
 
-
     mat3 InvK = inverse(K);
     auto T =  InvK*rho*b;
     t = T.col(0);
-    std::cout << "The extrinsic:\n Rotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
 
+    //extract extrinsic parameters from M =[A,b]
+    std::cout << "The intrinsic parameters:\n" << "\ncx: "<< cx << "\ncy: "<<cy<< "\nfx: "<< fx << "\nfy: " << fy <<"\nskew: "<< skew << "\n"<<std::endl;
+    std::cout << "The extrinsic parameters:\n" <<"\nRotation Matrix: \n"<< R << "\nTranslation Matrix: \n"<< t << std::endl;
     return true;
-    // TODO: delete the above code in you final submission (which are just examples).
 #endif
 }
 
